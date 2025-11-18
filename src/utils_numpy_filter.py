@@ -115,6 +115,47 @@ class NUMPYIEKF:
                            self.cov_Rot_c_i, self.cov_Rot_c_i, self.cov_Rot_c_i,
                            self.cov_t_c_i, self.cov_t_c_i, self.cov_t_c_i])
 
+    def apply_speed_constraint(self, Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, P,
+                               v_max=40.0, R_scalar=0.25, enabled=True):
+        """
+        Apply a pseudo-measurement constraining the speed magnitude:
+        z = v_max, h(x) = ||v||. Performs one EKF update using existing
+        state_and_cov_update. Returns updated state and covariance.
+
+        Args:
+            v_max: scalar speed limit (m/s)
+            R_scalar: measurement variance (m^2/s^2)
+            enabled: if False, does nothing (convenient for toggling)
+
+        Returns:
+            Rot_up, v_up, p_up, b_omega_up, b_acc_up, Rot_c_i_up, t_c_i_up, P_up
+        """
+        if not enabled:
+            return Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, P
+
+        v_norm = np.linalg.norm(v)
+        # only apply if exceeding threshold
+        if v_norm <= v_max:
+            return Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, P
+
+        # measurement z and residual r (scalar)
+        z = float(v_max)
+        r = np.array([z - v_norm])  # shape (1,)
+
+        # build H (1 x P_dim): derivative of ||v|| wrt v is v^T / ||v||
+        H = np.zeros((1, self.P_dim))
+        denom = v_norm if v_norm != 0.0 else 1e-8
+        H[0, 3:6] = (v / denom)
+
+        # R is scalar variance
+        R = np.array([[R_scalar]])
+
+        Rot_up, v_up, p_up, b_omega_up, b_acc_up, Rot_c_i_up, t_c_i_up, P_up = \
+            self.state_and_cov_update(Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, P, H, r, R)
+
+        return Rot_up, v_up, p_up, b_omega_up, b_acc_up, Rot_c_i_up, t_c_i_up, P_up
+    
+
     def run(self, t, u, measurements_covs, v_mes, p_mes, N, ang0):
         dt = t[1:] - t[:-1]  # (s)
         if N is None:
@@ -130,6 +171,17 @@ class NUMPYIEKF:
             Rot[i], v[i], p[i], b_omega[i], b_acc[i], Rot_c_i[i], t_c_i[i], P = \
                 self.update(Rot[i], v[i], p[i], b_omega[i], b_acc[i], Rot_c_i[i], t_c_i[i], P, u[i],
                             i, measurements_covs[i])
+            
+            # --- SPEED CONSTRAINT (pseudo-measurement) ---
+            # Adjust v_max and R_scalar below as needed or pass as parameters to run()
+            v_max = 40.0         # recommended default (m/s) - tune per dataset
+            R_scalar = 0.25      # variance (m^2/s^2) - smaller => stronger enforcement
+            Rot[i], v[i], p[i], b_omega[i], b_acc[i], Rot_c_i[i], t_c_i[i], P = \
+                self.apply_speed_constraint(Rot[i], v[i], p[i], b_omega[i], b_acc[i],
+                                            Rot_c_i[i], t_c_i[i], P,
+                                            v_max=v_max, R_scalar=R_scalar, enabled=True)
+            
+
             # correct numerical error every second
             if i % self.n_normalize_rot == 0:
                 Rot[i] = self.normalize_rot(Rot[i])

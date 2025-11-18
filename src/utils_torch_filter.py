@@ -121,6 +121,36 @@ class TORCHIEKF(torch.nn.Module, NUMPYIEKF):
                             ).double()
         self.cov0_measurement = torch.Tensor([self.cov_lat, self.cov_up]).double()
 
+    def apply_speed_constraint(self, Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, P,
+                               v_max=40.0, R_scalar=0.25, enabled=True):
+        """
+        Torch version of the pseudo-measurement speed constraint.
+        Uses self.state_and_cov_update (torch) to perform a consistent EKF update.
+        """
+        if not enabled:
+            return Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, P
+
+        v_norm = v.norm()
+        if v_norm.item() <= v_max:
+            return Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, P
+
+        # measurement z and residual (1-element tensor)
+        z = v.new_tensor([v_max]).double()
+        r = (z - v_norm).view(-1)  # shape [1]
+
+        # build H (1 x P_dim)
+        H = P.new_zeros(1, self.P_dim)
+        denom = v_norm if v_norm.item() != 0.0 else v.new_tensor([1e-8])
+        H[0, 3:6] = (v / denom)
+
+        # R is 1x1 covariance
+        R = torch.diag(v.new_tensor([R_scalar])).view(1, 1).double()
+
+        Rot_up, v_up, p_up, b_omega_up, b_acc_up, Rot_c_i_up, t_c_i_up, P_up = \
+            self.state_and_cov_update(Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, P, H, r, R)
+
+        return Rot_up, v_up, p_up, b_omega_up, b_acc_up, Rot_c_i_up, t_c_i_up, P_up
+
     def run(self, t, u,  measurements_covs, v_mes, p_mes, N, ang0):
 
         dt = t[1:] - t[:-1]  # (s)
@@ -135,6 +165,15 @@ class TORCHIEKF(torch.nn.Module, NUMPYIEKF):
             Rot[i], v[i], p[i], b_omega[i], b_acc[i], Rot_c_i[i], t_c_i[i], P = \
                 self.update(Rot_i, v_i, p_i, b_omega_i, b_acc_i, Rot_c_i_i, t_c_i_i, P_i,
                             u[i], i, measurements_covs[i])
+            
+             # --- SPEED CONSTRAINT (pseudo-measurement) ---
+            v_max = 40.0         # m/s
+            R_scalar = 0.25      # variance (m^2/s^2)
+            Rot[i], v[i], p[i], b_omega[i], b_acc[i], Rot_c_i[i], t_c_i[i], P = \
+                self.apply_speed_constraint(Rot[i], v[i], p[i], b_omega[i], b_acc[i],
+                                            Rot_c_i[i], t_c_i[i], P,
+                                            v_max=v_max, R_scalar=R_scalar, enabled=True)
+        
         return Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i
 
     def init_run(self, dt, u, p_mes, v_mes, N, ang0):
