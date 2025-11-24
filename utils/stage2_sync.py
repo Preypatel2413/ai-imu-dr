@@ -15,7 +15,7 @@ Stage 2 preprocessing for the IMU/GPS pipeline.
 
 This stage:
   - Loads the cleaned CSV from stage1.
-  - Chooses a master timebase (AST → GST → GPST).
+  - Chooses a master timebase unique(AST + GST).
   - Converts GPS lat/lon to local ENU coordinates.
   - Interpolates GPS position, altitude, speed, and bearing to IMU timestamps.
   - Computes ground-truth velocity (vx, vy, vz) and yaw from GPS bearing.
@@ -41,7 +41,7 @@ def stage2(input_path, output_path, prnt=False):
     MAX_GAP_S = 0.5
 
     # Window for accel/gyro synchronization (ms)
-    WINDOW_HALF_MS = 8   # +-15 ms is safe and works perfectly on all Android phones
+    WINDOW_HALF_MS = 15   # +-15 ms is safe and works perfectly on all Android phones
 
     # requested column groups / names
     gt_cols = ["p_gt_x","p_gt_y","p_gt_z","v_gt_x","v_gt_y","v_gt_z",
@@ -52,19 +52,26 @@ def stage2(input_path, output_path, prnt=False):
     df = pd.read_csv(INPUT)
 
     # Choose master timebase (prefers accel -> gyro -> gps)
-    imu_time = None
-    for cand in PREFERRED_IMU_TIME:
-        if cand in df.columns:
-            imu_time = cand
-            break
-    if imu_time is None:
-        raise ValueError(f"None of {PREFERRED_IMU_TIME} found. Columns: {df.columns.tolist()}")
+    # imu_time = None
+    # for cand in PREFERRED_IMU_TIME:
+    #     if cand in df.columns:
+    #         imu_time = cand
+    #         break
+    # if imu_time is None:
+    #     raise ValueError(f"None of {PREFERRED_IMU_TIME} found. Columns: {df.columns.tolist()}")
 
-    t_target_ms = df[imu_time].values.astype(np.float64)   # master timestamps in ms
+    # t_target_ms = df[imu_time].values.astype(np.float64)   # master timestamps in ms
+
+    times = np.concatenate([
+        df[col].dropna().values.astype(np.float64)
+        for col in ['AST', 'GST']
+    ])                                                  #this method uses unique timestamps from AST and GST
+
+    t_target_ms = np.sort(np.unique(times))
 
     # ============ GPS -> ENU + interpolation ============
-    if "GPST" not in df.columns:
-        df["GPST"] = df[imu_time]
+    # if "GPST" not in df.columns:
+    #     df["GPST"] = df[imu_time]
 
     gps_df = df[["GPST", "Lat", "Lon", "GPS Altitude", "GPS Speed", "Map Bearing"]].copy()
     gps_df = gps_df.dropna(subset=["GPST"])

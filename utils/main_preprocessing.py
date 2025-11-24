@@ -8,11 +8,11 @@ Entry point for the full IMU/GPS preprocessing pipeline.
 
 This script runs all processing stages in sequence:
 
-    Stage 1 → raw CSV cleanup  
-    Stage 2 → GPS interpolation + IMU synchronization  
-    Stage 3 → device orientation (roll, pitch, yaw) calibration  
-    Stage 4 → rotate IMU measurements into car frame  
-    Stage 5 → serialize final tensors into a .p pickle file
+    Stage 1 -> raw CSV cleanup  
+    Stage 2 -> GPS interpolation + IMU synchronization  
+    Stage 3 -> device orientation (roll, pitch, yaw) calibration  
+    Stage 4 -> rotate IMU measurements into car frame  
+    Stage 5 -> serialize final tensors into a .p pickle file
 
 All intermediate CSVs are written inside `raw_data/`, and the final
 pickle is written to `data/`.

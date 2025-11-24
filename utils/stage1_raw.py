@@ -14,10 +14,6 @@ This stage:
   - converts timestamps to a relative timebase by subtracting a rounded
     `time_offset` (ms),
   - writes the reduced CSV to disk.
-
-The function `stage1` is intentionally small and deterministic — it does
-not attempt to interpolate or resample. Later stages handle interpolation,
-synchronization and filtering.
 """
 
 
