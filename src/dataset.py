@@ -62,6 +62,8 @@ class BaseDataset(Dataset):
 
     def get_datasets(self):
         for dataset in os.listdir(self.path_data_save):
+            if not dataset.endswith(self.pickle_extension):
+                continue
             self.datasets += [dataset[:-2]]  # take just name, remove the ".p"
         self.divide_datasets()
 

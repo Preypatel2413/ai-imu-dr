@@ -430,8 +430,11 @@ def test_filter(args, dataset):
 
     for i in range(0, len(dataset.datasets)):
         dataset_name = dataset.dataset_name(i)
-        if dataset_name not in dataset.odometry_benchmark.keys():
-            continue
+
+        if not getattr(args, 'run_all_sequences', False):
+            if dataset_name not in dataset.odometry_benchmark.keys():
+                continue
+            
         print("Test filter on sequence: " + dataset_name)
         t, ang_gt, p_gt, v_gt, u = prepare_data(args, dataset, dataset_name, i,
                                                        to_numpy=True)
@@ -473,6 +476,7 @@ class KITTIArgs():
         train_filter = 0
         test_filter = 1
         results_filter = 1
+        run_all_sequences = True
         dataset_class = KITTIDataset
         parameter_class = KITTIParameters
 

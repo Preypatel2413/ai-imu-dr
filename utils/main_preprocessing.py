@@ -1,4 +1,6 @@
 from utils import stage1_raw, stage2_sync, stage3_orient, stage4_rotate, stage5_pickle
+from os import listdir
+from os.path import isfile, join
 
 """
 main_preprocessing.py
@@ -22,16 +24,20 @@ To run:
 """
 
 def main():
-
     path = "raw_data/"
-    input_file = "input_data.csv"
 
-    stage1_raw.stage1(input_path= path + input_file, output_path= path + "data_stage_1.csv")
-    stage2_sync.stage2(input_path= path + "data_stage_1.csv", output_path=path + "data_stage_2.csv")
-    roll, pitch, yaw = stage3_orient.stage3(input_path= path + "data_stage_2.csv")
+    onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
+    print(onlyfiles)
 
-    stage4_rotate.stage4(input_path= path + "data_stage_2.csv", output_path= path + "data_stage_3.csv", yaw_deg= yaw, roll_deg = roll, pitch_deg = pitch)
-    stage5_pickle.stage5(input_path= path + "data_stage_3.csv", output_path= "data/2011_09_30_drive_0028_extract.p")
+    for file in onlyfiles:
+        input_file = file
+       
+        stage1_raw.stage1(input_path= path + input_file, output_path= path + input_file[:-4] +"_data_stage_1.csv")
+        stage2_sync.stage2(input_path= path + input_file[:-4] + "_data_stage_1.csv", output_path=path + input_file[:-4] + "_data_stage_2.csv")
+        roll, pitch, yaw = stage3_orient.stage3(input_path= path + input_file[:-4] + "_data_stage_2.csv")
+
+        stage4_rotate.stage4(input_path= path + input_file[:-4] + "_data_stage_2.csv", output_path= path + input_file[:-4] + "_data_stage_3.csv", yaw_deg= yaw, roll_deg = roll, pitch_deg = pitch)
+        stage5_pickle.stage5(input_path= path + input_file[:-4] + "_data_stage_3.csv", output_path= "data/" + input_file[:-4] + ".p")
 
 
 if __name__ == "__main__":
