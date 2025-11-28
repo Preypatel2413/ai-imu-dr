@@ -91,10 +91,10 @@ class KITTIDataset(BaseDataset):
         super(KITTIDataset, self).__init__(args)
 
         for dataset in self.datasets_validation:
-            self.datasets_validatation_filter[dataset] = [0, None]
+            self.datasets_validatation_filter[dataset] = [0, self.get_data_length(dataset)]
 
         for dataset in self.datasets_train:
-            self.datasets_train_filter[dataset] = [0, None]
+            self.datasets_train_filter[dataset] = [0, self.get_data_length(dataset)]
 
         for dataset_fake in KITTIDataset.datasets_fake:
             if dataset_fake in self.datasets:

@@ -80,6 +80,10 @@ class BaseDataset(Dataset):
         return pickle_dict['t'], pickle_dict['ang_gt'], pickle_dict['p_gt'], pickle_dict['v_gt'],\
                pickle_dict['u']
 
+    def get_data_length(self, i):
+        pickle_dict = self[self.datasets.index(i) if type(i) != int else i]
+        return len(pickle_dict['t'])
+    
     def set_normalize_factors(self):
         path_normalize_factor = os.path.join(self.path_temp, self.file_normalize_factor)
         # we set factors only if file does not exist

@@ -245,6 +245,10 @@ def get_start_and_end(seq_dim, u):
         N0 = 0
         N = u.shape[0]
     else: # training sequence
+        if(u.shape[0] <= seq_dim):
+            N0 = 0
+            N = u.shape[0]
+            return N0, N
         N0 = 10 * int(np.random.randint(0, (u.shape[0] - seq_dim)/10))
         N = N0 + seq_dim
     return N0, N
