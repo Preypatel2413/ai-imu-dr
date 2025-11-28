@@ -431,12 +431,26 @@ class KITTIArgs():
         path_results = "../results"
         path_temp = "../temp"
 
-        epochs = 400
+        epochs = 50
         seq_dim = 6000
 
         # training, cross-validation and test dataset
-        cross_validation_sequences = []
-        test_sequences = []
+        cross_validation_sequences = ["02_05_2025_22_59_42_57665df4",
+                                        "02_05_2025_23_36_03_894abda3",
+                                        "02_06_2025_00_04_13_9a46fc77",
+                                        "02_06_2025_00_29_14_bfc1ad3c",
+                                        "02_06_2025_00_44_14_5a9a973c"]
+        
+        test_sequences = ["02_06_2025_01_39_32_2d7e6a6a",
+                            "02_06_2025_02_03_39_01d6da84",
+                            "02_07_2025_14_19_08_10f299f0",
+                            "02_08_2025_07_18_05_e5b5c337",
+                            "02_08_2025_07_50_23_1bf64295",
+                            "02_08_2025_09_17_17_14addb21",
+                            "02_09_2025_07_19_51_bbf04c23",
+                            "02_09_2025_07_44_45_5f13d720",
+                            "02_09_2025_08_11_45_749875f5",
+                            "05_06_2025_15_46_40_Dnipro_R+000_P+000_Y+000_1"]
         continue_training = True
 
         # choose what to do
