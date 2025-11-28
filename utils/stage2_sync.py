@@ -52,22 +52,22 @@ def stage2(input_path, output_path, prnt=False):
     df = pd.read_csv(INPUT)
 
     # Choose master timebase (prefers accel -> gyro -> gps)
-    # imu_time = None
-    # for cand in PREFERRED_IMU_TIME:
-    #     if cand in df.columns:
-    #         imu_time = cand
-    #         break
-    # if imu_time is None:
-    #     raise ValueError(f"None of {PREFERRED_IMU_TIME} found. Columns: {df.columns.tolist()}")
+    imu_time = None
+    for cand in PREFERRED_IMU_TIME:
+        if cand in df.columns:
+            imu_time = cand
+            break
+    if imu_time is None:
+        raise ValueError(f"None of {PREFERRED_IMU_TIME} found. Columns: {df.columns.tolist()}")
 
-    # t_target_ms = df[imu_time].values.astype(np.float64)   # master timestamps in ms
+    t_target_ms = df[imu_time].values.astype(np.float64)   # master timestamps in ms
 
-    times = np.concatenate([
-        df[col].dropna().values.astype(np.float64)
-        for col in ['AST', 'GST']
-    ])                                                  #this method uses unique timestamps from AST and GST
+    # times = np.concatenate([
+    #     df[col].dropna().values.astype(np.float64)
+    #     for col in ['AST', 'GST']
+    # ])                                                  #this method uses unique timestamps from AST and GST
 
-    t_target_ms = np.sort(np.unique(times))
+    # t_target_ms = np.sort(np.unique(times))
 
     # ============ GPS -> ENU + interpolation ============
     # if "GPST" not in df.columns:

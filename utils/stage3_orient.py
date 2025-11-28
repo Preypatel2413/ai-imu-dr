@@ -21,9 +21,13 @@ This stage:
 """
 
 
-def stage3(input_path, plot = True):
+def stage3(input_path, segment_start = 0, segment_end = None, plot = True):
     df = pd.read_csv(input_path)
-    # df = df[22000:]
+    
+    if(segment_start!=0 or segment_end!=None):
+        segment_end = len(df) if segment_end==None else segment_end
+        df = df[segment_start:segment_end]
+
     time = df['time'].values
     ax = df['Ax'].values
     ay = df['Ay'].values
@@ -98,8 +102,8 @@ def stage3(input_path, plot = True):
         a_forward =  c * a_hx + s * a_hy
         a_lateral = -s * a_hx + c * a_hy
 
-        v_forward = detrend(np.cumsum(a_forward) * dt)
-        v_lateral = detrend(np.cumsum(a_lateral) * dt)
+        v_forward = np.cumsum(a_forward) * dt
+        v_lateral = np.cumsum(a_lateral) * dt
 
         cost = np.mean(v_lateral**2)   # Main nonholonomic term
         return cost

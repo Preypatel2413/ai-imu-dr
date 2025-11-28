@@ -27,7 +27,7 @@ def stage4(input_path, output_path, yaw_deg, roll_deg = 0, pitch_deg = 0):
 
     roll_dg = -1* roll_deg
     pitch_dg = -1 * pitch_deg
-    yaw_dg = -1 * yaw_deg
+    yaw_dg = yaw_deg
 
 
     roll_rad = np.deg2rad(roll_dg)
@@ -60,7 +60,7 @@ def stage4(input_path, output_path, yaw_deg, roll_deg = 0, pitch_deg = 0):
     # Build full device->car rotation matrix.
     # We remove device roll,pitch,yaw by applying inverse rotations:
     def rotation_device_to_car(roll, pitch, yaw):
-        return Rz(-yaw) @ Rx(-roll) @ Ry(-pitch)
+        return Rz(-yaw) @ Ry(-pitch) @ Rx(-roll) 
 
     # load CSV
     df = pd.read_csv(INPUT)

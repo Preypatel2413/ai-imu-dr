@@ -78,55 +78,17 @@ class KITTIDataset(BaseDataset):
     # Bundle into an easy-to-access structure
     OxtsData = namedtuple('OxtsData', 'packet, T_w_imu')
     min_seq_dim = 25 * 100  # 60 s
-    datasets_fake = ['2011_09_26_drive_0093_extract', '2011_09_28_drive_0039_extract',
-                     '2011_09_28_drive_0002_extract']
-    """
-    '2011_09_30_drive_0028_extract' has trouble at N = [6000, 14000] -> test data
-    '2011_10_03_drive_0027_extract' has trouble at N = 29481
-    '2011_10_03_drive_0034_extract' has trouble at N = [33500, 34000]
-    """
+    datasets_fake = []
 
     # training set to the raw data of the KITTI dataset.
     # The following dict lists the name and end frame of each sequence that
     # has been used to extract the visual odometry / SLAM training set
     odometry_benchmark = OrderedDict()
-    odometry_benchmark["2011_10_03_drive_0027_extract"] = [0, 45692]
-    odometry_benchmark["2011_10_03_drive_0042_extract"] = [0, 12180]
-    odometry_benchmark["2011_10_03_drive_0034_extract"] = [0, 47935]
-    odometry_benchmark["2011_09_26_drive_0067_extract"] = [0, 8000]
-    odometry_benchmark["2011_09_30_drive_0016_extract"] = [0, 2950]
-    odometry_benchmark["2011_09_30_drive_0018_extract"] = [0, 28659]
-    odometry_benchmark["2011_09_30_drive_0020_extract"] = [0, 11347]
-    odometry_benchmark["2011_09_30_drive_0027_extract"] = [0, 11545]
-    odometry_benchmark["2011_09_30_drive_0028_extract"] = [11231, 53650]
-    odometry_benchmark["2011_09_30_drive_0033_extract"] = [0, 16589]
-    odometry_benchmark["2011_09_30_drive_0034_extract"] = [0, 12744]
-
+    
     odometry_benchmark_img = OrderedDict()
-    odometry_benchmark_img["2011_10_03_drive_0027_extract"] = [0, 45400]
-    odometry_benchmark_img["2011_10_03_drive_0042_extract"] = [0, 11000]
-    odometry_benchmark_img["2011_10_03_drive_0034_extract"] = [0, 46600]
-    odometry_benchmark_img["2011_09_26_drive_0067_extract"] = [0, 8000]
-    odometry_benchmark_img["2011_09_30_drive_0016_extract"] = [0, 2700]
-    odometry_benchmark_img["2011_09_30_drive_0018_extract"] = [0, 27600]
-    odometry_benchmark_img["2011_09_30_drive_0020_extract"] = [0, 11000]
-    odometry_benchmark_img["2011_09_30_drive_0027_extract"] = [0, 11000]
-    odometry_benchmark_img["2011_09_30_drive_0028_extract"] = [11000, 51700]
-    odometry_benchmark_img["2011_09_30_drive_0033_extract"] = [0, 15900]
-    odometry_benchmark_img["2011_09_30_drive_0034_extract"] = [0, 12000]
 
     def __init__(self, args):
         super(KITTIDataset, self).__init__(args)
-
-        self.datasets_validatation_filter['2011_09_30_drive_0028_extract'] = [11231, 53650]
-        self.datasets_train_filter["2011_10_03_drive_0042_extract"] = [0, None]
-        self.datasets_train_filter["2011_09_30_drive_0018_extract"] = [0, 15000]
-        self.datasets_train_filter["2011_09_30_drive_0020_extract"] = [0, None]
-        self.datasets_train_filter["2011_09_30_drive_0027_extract"] = [0, None]
-        self.datasets_train_filter["2011_09_30_drive_0033_extract"] = [0, None]
-        self.datasets_train_filter["2011_10_03_drive_0027_extract"] = [0, 18000]
-        self.datasets_train_filter["2011_10_03_drive_0034_extract"] = [0, 31000]
-        self.datasets_train_filter["2011_09_30_drive_0034_extract"] = [0, None]
 
         for dataset_fake in KITTIDataset.datasets_fake:
             if dataset_fake in self.datasets:
@@ -467,8 +429,8 @@ class KITTIArgs():
         seq_dim = 6000
 
         # training, cross-validation and test dataset
-        cross_validation_sequences = ['2011_09_30_drive_0028_extract']
-        test_sequences = ['2011_09_30_drive_0028_extract']
+        cross_validation_sequences = []
+        test_sequences = []
         continue_training = True
 
         # choose what to do

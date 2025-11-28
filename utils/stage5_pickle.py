@@ -24,9 +24,8 @@ This stage:
 """
 
 
-def stage5(input_path, output_path, prnt = False):
+def stage5(input_path, output_path, segment_start = 0, segment_end = None, prnt = False):
 
-    rndm = 0
     pre_csv = input_path
     out_pickle = output_path
 
@@ -34,8 +33,10 @@ def stage5(input_path, output_path, prnt = False):
     name_in_pickle = None                # e.g. "2011_09_30_drive_0028_extract" or None to auto-derive
 
     df = pd.read_csv(pre_csv)
-    # df = df[1500:]
-
+    if(segment_start!=0 or segment_end!=None):
+        segment_end = len(df) if segment_end==None else segment_end
+        df = df[segment_start:segment_end]
+        
     required = [
         "time",
         "p_gt_x","p_gt_y","p_gt_z",
