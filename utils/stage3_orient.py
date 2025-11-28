@@ -21,7 +21,7 @@ This stage:
 """
 
 
-def stage3(input_path, segment_start = 0, segment_end = None, plot = True):
+def stage3(input_path, segment_start = 0, segment_end = None, prnt = False):
     df = pd.read_csv(input_path)
     
     if(segment_start!=0 or segment_end!=None):
@@ -52,8 +52,9 @@ def stage3(input_path, segment_start = 0, segment_end = None, plot = True):
     # Average gravity vector over the whole sequence (or only static parts if you know them)
     g_vec = np.array([np.mean(gx_f), np.mean(gy_f), np.mean(gz_f)])
     g_norm = np.linalg.norm(g_vec)
-    print(f"Average gravity vector (device frame): [{g_vec[0]:.3f}, {g_vec[1]:.3f}, {g_vec[2]:.3f}] m/s²")
-    print(f"Gravity magnitude: {g_norm:.3f} m/s²")
+    if(prnt):
+      print(f"Average gravity vector (device frame): [{g_vec[0]:.3f}, {g_vec[1]:.3f}, {g_vec[2]:.3f}] m/s²")
+      print(f"Gravity magnitude: {g_norm:.3f} m/s²")
 
     # Compute roll and pitch that align this gravity vector to [0, 0, +9.81]
     roll = np.arctan2(g_vec[1], np.sqrt(g_vec[0]**2 + g_vec[2]**2))
@@ -62,9 +63,10 @@ def stage3(input_path, segment_start = 0, segment_end = None, plot = True):
     roll_deg = np.degrees(roll)
     pitch_deg = np.degrees(pitch)
 
-    print(f"\n=== ESTIMATED DEVICE MOUNTING ===")
-    print(f"Roll  (rotation around X):  {roll_deg:+6.3f}°")
-    print(f"Pitch (rotation around Y):  {pitch_deg:+6.3f}°")
+    if(prnt):
+      print(f"\n=== ESTIMATED DEVICE MOUNTING ===")
+      print(f"Roll  (rotation around X):  {roll_deg:+6.3f}°")
+      print(f"Pitch (rotation around Y):  {pitch_deg:+6.3f}°")
 
     # Build rotation matrix: R_device_to_horizontal = R_pitch @ R_roll
     cr, sr = np.cos(roll), np.sin(roll)
@@ -109,7 +111,7 @@ def stage3(input_path, segment_start = 0, segment_end = None, plot = True):
         return cost
 
     # Coarse search
-    print("\nRunning yaw grid search in leveled horizontal frame...")
+    # print("\nRunning yaw grid search in leveled horizontal frame...")
     yaws = np.arange(-180, 180, 0.8)
     costs = [yaw_cost_in_horizontal_frame(y) for y in yaws]
 
@@ -122,12 +124,13 @@ def stage3(input_path, segment_start = 0, segment_end = None, plot = True):
     best_idx = np.argmin(fine_costs)
     best_yaw_deg = fine_yaws[best_idx]
 
-    print(f"\n=== FINAL RESULT (FULL 3D CALIBRATION) ===")
-    print(f"Device mounting  → Roll: {roll_deg:+6.3f}° | Pitch: {pitch_deg:+6.3f}°")
-    print(f"Remaining yaw offset (horizontal → car forward): {best_yaw_deg:+6.3f}°")
+    if(prnt):
+      print(f"\n=== FINAL RESULT (FULL 3D CALIBRATION) ===")
+      print(f"Device mounting  → Roll: {roll_deg:+6.3f}° | Pitch: {pitch_deg:+6.3f}°")
+      print(f"Remaining yaw offset (horizontal → car forward): {best_yaw_deg:+6.3f}°")
 
     # ============================= OPTIONAL: Plot best yaw =============================
-    if(plot == True):
+    if(prnt):
         theta = np.deg2rad(best_yaw_deg)
         c, s = np.cos(theta), np.sin(theta)
         a_fwd = c * a_hx + s * a_hy

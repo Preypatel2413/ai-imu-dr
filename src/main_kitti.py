@@ -90,6 +90,12 @@ class KITTIDataset(BaseDataset):
     def __init__(self, args):
         super(KITTIDataset, self).__init__(args)
 
+        for dataset in self.datasets_validation:
+            self.datasets_validatation_filter[dataset] = [0, None]
+
+        for dataset in self.datasets_train:
+            self.datasets_train_filter[dataset] = [0, None]
+
         for dataset_fake in KITTIDataset.datasets_fake:
             if dataset_fake in self.datasets:
                 self.datasets.remove(dataset_fake)
@@ -420,7 +426,7 @@ def test_filter(args, dataset):
 
 
 class KITTIArgs():
-        path_data_base = "/media/mines/46230797-4d43-4860-9b76-ce35e699ea47/KITTI/raw"
+        path_data_base = ""
         path_data_save = "../data"
         path_results = "../results"
         path_temp = "../temp"

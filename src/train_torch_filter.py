@@ -104,6 +104,7 @@ def prepare_loss_data(args, dataset):
     list_rpe = {}
     for dataset_name, Ns in dataset.datasets_train_filter.items():
         t, ang_gt, p_gt, v_gt, u = prepare_data(args, dataset, dataset_name, 0)
+        Ns[1] = len(t) if(Ns[1]==None) else Ns[1]
         p_gt = p_gt.double()
         Rot_gt = torch.zeros(Ns[1], 3, 3)
         for k in range(Ns[1]):
@@ -114,6 +115,7 @@ def prepare_loss_data(args, dataset):
     list_rpe_validation = {}
     for dataset_name, Ns in dataset.datasets_validatation_filter.items():
         t, ang_gt, p_gt, v_gt, u = prepare_data(args, dataset, dataset_name, 0)
+        Ns[1] = len(t) if(Ns[1]==None) else Ns[1]
         p_gt = p_gt.double()
         Rot_gt = torch.zeros(Ns[1], 3, 3)
         for k in range(Ns[1]):
