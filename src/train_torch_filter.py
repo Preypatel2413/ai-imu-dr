@@ -8,8 +8,9 @@ from utils_torch_filter import TORCHIEKF
 from utils import prepare_data
 import copy
 import datetime
+import gc
 
-save_to_drive = False
+save_to_drive = True
 
 max_loss = 2e1
 max_grad_norm = 1e0
@@ -71,7 +72,9 @@ def train_filter(args, dataset):
         save_iekf(args, iekf)
         print("Amount of time spent for 1 epoch: {}s\n".format(int(time.time() - start_time)))
         start_time = time.time()
-
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
 def prepare_filter(args, dataset):
     iekf = TORCHIEKF()
@@ -92,8 +95,6 @@ def prepare_filter(args, dataset):
 
 
 def prepare_loss_data(args, dataset):
-
-
 
     file_delta_p = os.path.join(args.path_temp, 'delta_p.p')
     if os.path.isfile(file_delta_p):
@@ -152,9 +153,9 @@ def prepare_loss_data(args, dataset):
 
 
 def train_loop(args, dataset, epoch, iekf, optimizer, seq_dim):
-    loss_train = 0
     optimizer.zero_grad()
     for i, (dataset_name, Ns) in enumerate(dataset.datasets_train_filter.items()):
+        loss_train = 0
         t, ang_gt, p_gt, v_gt, u, N0 = prepare_data_filter(dataset, dataset_name, Ns,
                                                                   iekf, seq_dim)
 
@@ -171,19 +172,29 @@ def train_loop(args, dataset, epoch, iekf, optimizer, seq_dim):
             loss_train += loss
             cprint("{} loss: {:.5f}".format(i, loss))
 
-    if loss_train == 0: 
-        return 
-    loss_train.backward()  # loss_train.cuda().backward()  
-    g_norm = torch.nn.utils.clip_grad_norm_(iekf.parameters(), max_grad_norm)
-    if np.isnan(g_norm) or g_norm > 3*max_grad_norm:
-        cprint("gradient norm: {:.5f}".format(g_norm), 'yellow')
-        optimizer.zero_grad()
+        if loss_train == 0: 
+            del t, ang_gt, p_gt, v_gt, u, N0, loss, loss_train
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            continue
+        loss_train.backward()  # loss_train.cuda().backward()  
+        g_norm = torch.nn.utils.clip_grad_norm_(iekf.parameters(), max_grad_norm)
+        if np.isnan(g_norm) or g_norm > 3*max_grad_norm:
+            cprint("gradient norm: {:.5f}".format(g_norm), 'yellow')
+            optimizer.zero_grad()
 
-    else:
-        optimizer.step()
-        optimizer.zero_grad()
-        cprint("gradient norm: {:.5f}".format(g_norm))
-    print('Train Epoch: {:2d} \tLoss: {:.5f}'.format(epoch, loss_train))
+        else:
+            optimizer.step()
+            optimizer.zero_grad()
+            cprint("gradient norm: {:.5f}".format(g_norm))
+        print('Train Epoch: {:2d} \tLoss: {:.5f}'.format(epoch, loss_train))
+        
+        del t, ang_gt, p_gt, v_gt, u, N0, loss, loss_train, g_norm
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
     return loss_train
 
 
@@ -198,18 +209,29 @@ def save_iekf(args, iekf):
         drive_path = os.path.join(drive_folder, f"iekfnets_{timestamp}.p")
         torch.save(iekf.state_dict(), drive_path)
         print("Backup saved to:", drive_path)
+    
+    gc.collect()
+
 
 
 def mini_batch_step(dataset, dataset_name, iekf, list_rpe, t, ang_gt, p_gt, v_gt, u, N0):
     iekf.set_Q()
     measurements_covs = iekf.forward_nets(u)
-    Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i = iekf.run(t, u,measurements_covs,
+
+    with  torch.no_grad():
+        Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i = iekf.run(t, u,measurements_covs,
                                                             v_gt, p_gt, t.shape[0],
                                                             ang_gt[0])
+    
     delta_p, delta_p_gt = precompute_lost(Rot, p, list_rpe, N0)
     if delta_p is None:
+        del Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, delta_p, delta_p_gt
+        gc.collect()
         return -1
     loss = criterion(delta_p, delta_p_gt)
+
+    del Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, delta_p, delta_p_gt
+    gc.collect()
     return loss
 
 
