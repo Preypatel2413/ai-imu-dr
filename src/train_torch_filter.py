@@ -193,8 +193,8 @@ def save_iekf(args, iekf):
     print("The IEKF nets are saved in the file " + file_name)
 
     if(save_to_drive):
-        drive_folder = "/content/drive/MyDrive/ai_imu_checkpoints"
-        timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        drive_folder = "/content/drive/MyDrive/AI_IMU_DR/checkpoints"
+        timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         drive_path = os.path.join(drive_folder, f"iekfnets_{timestamp}.p")
         torch.save(iekf.state_dict(), drive_path)
         print("Backup saved to:", drive_path)
