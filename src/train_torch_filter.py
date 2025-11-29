@@ -7,6 +7,9 @@ from termcolor import cprint
 from utils_torch_filter import TORCHIEKF
 from utils import prepare_data
 import copy
+import datetime
+
+save_to_drive = False
 
 max_loss = 2e1
 max_grad_norm = 1e0
@@ -188,6 +191,13 @@ def save_iekf(args, iekf):
     file_name = os.path.join(args.path_temp, "iekfnets.p")
     torch.save(iekf.state_dict(), file_name)
     print("The IEKF nets are saved in the file " + file_name)
+
+    if(save_to_drive):
+        drive_folder = "/content/drive/MyDrive/ai_imu_checkpoints"
+        timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        drive_path = os.path.join(drive_folder, f"iekfnets_{timestamp}.p")
+        torch.save(iekf.state_dict(), drive_path)
+        print("Backup saved to:", drive_path)
 
 
 def mini_batch_step(dataset, dataset_name, iekf, list_rpe, t, ang_gt, p_gt, v_gt, u, N0):
