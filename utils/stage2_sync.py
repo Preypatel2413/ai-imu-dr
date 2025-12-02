@@ -29,6 +29,22 @@ This stage:
 Output is fully aligned IMU + GPS ground truth.
 """
 
+_TRANSFORMER_CACHE = {}
+def _get_transformer(lat0: float, lon0: float, round_digits: int = 6):
+    """
+    Return a cached Transformer for the given center. Keys are rounded to avoid
+    tiny floating differences creating many transformers.
+    """
+    if not HAVE_PYPROJ:
+        return None
+    key = (round(lat0, round_digits), round(lon0, round_digits))
+    t = _TRANSFORMER_CACHE.get(key)
+    if t is None:
+        proj_str = f"+proj=aeqd +R=6378137 +lat_0={lat0} +lon_0={lon0}"
+        # always_xy=True makes inputs (lon, lat) order
+        t = Transformer.from_crs("epsg:4326", proj_str, always_xy=True)
+        _TRANSFORMER_CACHE[key] = t
+    return t
 
 def stage2(input_path, output_path, prnt=False):
     INPUT = input_path
@@ -86,18 +102,23 @@ def stage2(input_path, output_path, prnt=False):
     bearing_gps = gps_df["Map Bearing"].astype(float).values if "Map Bearing" in gps_df.columns else np.full_like(t_gps, np.nan)
 
     def latlon_to_enu(lats, lons, lat0=None, lon0=None):
-        if lat0 is None: lat0 = float(np.mean(lats))
-        if lon0 is None: lon0 = float(np.mean(lons))
+        lats_np = np.asarray(lats, dtype=float)
+        lons_np = np.asarray(lons, dtype=float)
+
+        if lat0 is None:
+            lat0 = float(np.nanmean(lats_np))
+        if lon0 is None:
+            lon0 = float(np.nanmean(lons_np))
+
         if HAVE_PYPROJ and USE_ENU:
-            proj_str = f"+proj=aeqd +R=6378137 +lat_0={lat0} +lon_0={lon0}"
-            transformer = Transformer.from_crs("epsg:4326", proj_str, always_xy=True)
-            xs, ys = transformer.transform(lons.tolist(), lats.tolist())
-            return np.array(xs), np.array(ys), lat0, lon0
+            transformer = _get_transformer(lat0, lon0)
+            xs, ys = transformer.transform(lons_np, lats_np)
+            return np.asarray(xs, dtype=float), np.asarray(ys, dtype=float), lat0, lon0
         else:
             R = 6378137.0
             lat0_rad = np.deg2rad(lat0)
-            dlat = np.deg2rad(lats - lat0)
-            dlon = np.deg2rad(lons - lon0)
+            dlat = np.deg2rad(lats_np - lat0)
+            dlon = np.deg2rad(lons_np - lon0)
             x = R * dlon * np.cos(lat0_rad)
             y = R * dlat
             return x, y, lat0, lon0
@@ -199,18 +220,50 @@ def stage2(input_path, output_path, prnt=False):
     imu_all = imu_all.sort_values("t_ms").reset_index(drop=True)
 
     def window_mean_sync(t_native, values, t_target, half_win):
-        out = np.full((len(t_target), values.shape[1]), np.nan)
-        for i, t in enumerate(t_target):
-            mask = (t_native >= t - half_win) & (t_native <= t + half_win)
-            if mask.any():
-                out[i] = np.mean(values[mask], axis=0)
+        t_native = np.asarray(t_native)
+        t_target = np.asarray(t_target)
+        values = np.asarray(values, dtype=float)
+
+        n = len(t_native)
+        m = len(t_target)
+        if n == 0:
+            return np.full((m, values.shape[1]), np.nan)
+
+        K = values.shape[1]
+        out = np.full((m, K), np.nan)
+        csum = np.vstack((np.zeros((1, K), dtype=float), np.cumsum(values, axis=0, dtype=float)))
+
+        lo = 0
+        hi = -1
+        for i in range(m):
+            t = t_target[i]
+            low_bound = t - half_win
+            high_bound = t + half_win
+            while lo < n and t_native[lo] < low_bound:
+                lo += 1
+            while (hi + 1) < n and t_native[hi + 1] <= high_bound:
+                hi += 1
+
+            if lo <= hi:
+                cnt = hi - lo + 1
+                s = csum[hi + 1] - csum[lo]
+                out[i] = s / cnt
             else:
-                # fallback nearest
-                idx = np.argmin(np.abs(t_native - t))
+                # no samples in window -> fallback to nearest sample
+                # candidate indices: lo (first >= low_bound) and lo-1
+                if lo >= n:
+                    idx = n - 1
+                elif lo == 0:
+                    idx = 0
+                else:
+                    if abs(t_native[lo] - t) < abs(t_native[lo - 1] - t):
+                        idx = lo
+                    else:
+                        idx = lo - 1
                 out[i] = values[idx]
         return out
 
-    # Extract raw data
+
     accel_mask = imu_all["sensor"] == "accel"
     gyro_mask  = imu_all["sensor"] == "gyro"
 

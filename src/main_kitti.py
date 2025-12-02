@@ -18,6 +18,7 @@ from utils import prepare_data
 from train_torch_filter import train_filter
 from utils_plot import results_filter
 
+import config
 
 def launch(args):
     if args.read_data:
@@ -435,27 +436,15 @@ class KITTIArgs():
         seq_dim = 6000
 
         # training, cross-validation and test dataset
-        cross_validation_sequences = ["02_05_2025_22_59_42_57665df4.neolog",
-                                        "02_05_2025_23_36_03_89a4bda3.neolog",
-                                        "02_06_2025_00_04_13_9a46fc77.neolog",
-                                        "02_06_2025_00_29_14_bfc1ad3c.neolog",
-                                        "02_06_2025_00_44_14_5a9a973c.neolog"]
+        cross_validation_sequences = config.CROSS_VALIDATION_SEQUENCES
         
-        test_sequences = ["02_06_2025_01_39_32_2d7e6a6a.neolog",
-                            "02_06_2025_02_03_39_01d6da84.neolog",
-                            "02_07_2025_14_19_08_10f299f0.neolog",
-                            "02_08_2025_07_18_05_e5b5c337.neolog",
-                            "02_08_2025_07_50_23_1bf64295.neolog",
-                            "02_08_2025_09_17_17_14addb21.neolog",
-                            "02_09_2025_07_19_51_bbf04c23.neolog",
-                            "02_09_2025_07_44_45_5f13d720.neolog",
-                            "02_09_2025_08_11_45_749875f5.neolog",
-                            "05_06_2025_15_46_40_Dnipro_R+000_P+000_Y+000_1"]
+        test_sequences = config.TEST_SEQUENCES
+        
         continue_training = True
 
         # choose what to do
         read_data = 0
-        train_filter = 0
+        train_filter = config.TRAIN_FILTER
         test_filter = 1
         results_filter = 1
         run_all_sequences = True

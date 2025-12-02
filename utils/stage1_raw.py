@@ -22,7 +22,7 @@ def stage1(input_path, output_path, prnt = False):
     INPUT_FILE = input_path
     OUTPUT_FILE = output_path
 
-    df = pd.read_csv(INPUT_FILE, sep=",", engine= "python")
+    df = pd.read_csv(INPUT_FILE, sep=",")
 
     cols_to_keep = [
         "GPS Time(ms)", "Lat", "Lon", "GPS Altitude", "GPS Speed", "Map Bearing",
@@ -34,8 +34,6 @@ def stage1(input_path, output_path, prnt = False):
     ]
 
     df = df[cols_to_keep]
-    df = df[200:]                   # Skip initial rows to avoid mismatched initial timing bursts.
-
     df.rename(columns={
         'GPS Time(ms)': 'GPST',
         'Accel Sensor Time(ms)': 'AST',
@@ -43,6 +41,25 @@ def stage1(input_path, output_path, prnt = False):
         'Magn Sensor Time(ms)': 'MST',
         'Pressure Sensor Time(ms)': 'PST'
     }, inplace=True)
+
+    max_skip_rows = 1000   # scan up to this many rows to find the first aligned timestamps
+    sync_time = 100         # max allowed timestamp spread (ms) to treat a row as synced
+    
+    cols = ["GPST", "AST", "GST", "MST", "PST"]
+    limit = min(len(df), max_skip_rows)
+    ts = df[cols].iloc[:limit].to_numpy(dtype=float)
+    row_max = np.nanmax(ts, axis=1)
+    row_min = np.nanmin(ts, axis=1)
+    row_range = row_max - row_min
+    candidates = np.where(row_range < sync_time)[0]
+
+    if len(candidates) > 0:
+        i = int(candidates[0])   
+    else:
+        i = limit - 1         
+        
+    df = df[i:].reset_index(drop=True)
+
 
     # All timestamps are epoch-based, so subtract the minimum (rounded to nearest second)
     mod = 1000

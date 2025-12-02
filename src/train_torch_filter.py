@@ -9,8 +9,10 @@ from utils import prepare_data
 import copy
 import datetime
 import gc
+import config
 
-save_to_drive = True
+save_to_drive = config.SAVE_TO_DRIVE
+drive_folder = config.DRIVE_PATH
 
 max_loss = 2e1
 max_grad_norm = 1e0
@@ -204,7 +206,6 @@ def save_iekf(args, iekf):
     print("The IEKF nets are saved in the file " + file_name)
 
     if(save_to_drive):
-        drive_folder = "/content/drive/MyDrive/AI_IMU_DR/checkpoints"
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         drive_path = os.path.join(drive_folder, f"iekfnets_{timestamp}.p")
         torch.save(iekf.state_dict(), drive_path)
