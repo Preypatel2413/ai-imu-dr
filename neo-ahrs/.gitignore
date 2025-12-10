@@ -1,7 +1,7 @@
 docs
 data
-build
 
+.vs
 *.aux
 *.log
 *.out
