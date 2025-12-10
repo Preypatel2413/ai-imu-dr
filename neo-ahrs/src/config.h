@@ -1,0 +1,26 @@
+#ifndef _NEOAHRS_CONFIG_H_
+#define _NEOAHRS_CONFIG_H_
+
+#define NEOAHRS_SENSOR_SAMPLE_TIME_SEC 0.05f
+#define NEOAHRS_MADMADGWICK_BETA       0.03f
+
+// Drive segmentation params for magcal()
+#define NEOAHRS_MAGSEG_ALPHA               2.0f
+#define NEOAHRS_MAGSEG_WINDOW_SIZE         100
+#define NEOAHRS_MIN_TIME_BETWEEN_PEAKS_SEC 60.0f
+#define NEOAHRS_THRESHOLD_PERCENT          2000
+
+// RANSAC params for magcal()
+#define NEOAHRS_RANSAC_MIN_NUM_ITERATIONS 10
+#define NEOAHRS_RANSAC_MAX_NUM_ITERATIONS 2500
+#define NEOAHRS_RANSAC_INLIER_THRESHOLD   15
+#define NEOAHRS_RANSAC_INLIER_PERCENT     95
+
+// Butterworth LPF params
+#define NEOAHRS_BUTTERWORTH_FC 200
+#define NEOAHRS_BUTTERWORTH_FS 44100
+
+// Physical constants
+#define NEOAHRS_PHY_G 9.8
+
+#endif // config.h
