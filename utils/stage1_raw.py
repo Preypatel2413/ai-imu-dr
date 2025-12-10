@@ -22,7 +22,7 @@ def stage1(input_path, output_path, prnt = False):
     INPUT_FILE = input_path
     OUTPUT_FILE = output_path
 
-    df = pd.read_csv(INPUT_FILE, sep=",")
+    df = pd.read_csv(INPUT_FILE)
 
     cols_to_keep = [
         "GPS Time(ms)", "Lat", "Lon", "GPS Altitude", "GPS Speed", "Map Bearing",
